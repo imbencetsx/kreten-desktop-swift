@@ -36,7 +36,7 @@ impl Default for Settings {
             notifications_enabled: true,
             start_minimized: false,
             launch_at_startup: false,
-            theme: "light".into(),
+            theme: "system".into(),
             palette: "ocean".into(),
             private_grades: false,
             bell_offset_minutes: 0,

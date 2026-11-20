@@ -220,14 +220,29 @@ export default function App() {
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
-      document.documentElement.dataset.theme =
+      const theme =
         snapshot.settings.theme === "system"
           ? media.matches
             ? "dark"
             : "light"
           : snapshot.settings.theme;
+      document.documentElement.dataset.theme = theme;
       document.documentElement.dataset.palette = snapshot.settings.palette;
       document.documentElement.dataset.ui = snapshot.settings.uiStyle || "glass";
+
+      const themeColor =
+        theme === "dark"
+          ? snapshot.settings.uiStyle === "hyperos"
+            ? "#000000"
+            : "#111724"
+          : snapshot.settings.uiStyle === "hyperos"
+            ? "#f2f3f5"
+            : "#edf2f9";
+
+      const metaThemeColors = document.querySelectorAll(
+        'meta[name="theme-color"]',
+      );
+      metaThemeColors.forEach((el) => el.setAttribute("content", themeColor));
     };
     apply();
     media.addEventListener("change", apply);

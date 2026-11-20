@@ -369,7 +369,10 @@ async fn class_averages_fall_back_to_accepted_query_form_and_hide_server_refusal
         .await;
     core.refresh().await.unwrap();
     let cache = &core.state.accounts[0].cache;
-    assert_eq!(cache.data["classAverages"][0]["Tantargy"]["Nev"], "Matematika");
+    assert_eq!(
+        cache.data["classAverages"][0]["Tantargy"]["Nev"],
+        "Matematika"
+    );
     assert!(!cache.errors.contains_key("classAverages"));
 
     // A server that refuses every form keeps the previous rows and shows no error.

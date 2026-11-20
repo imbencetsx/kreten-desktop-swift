@@ -60,7 +60,7 @@ export const defaults: Settings = {
   notificationsEnabled: true,
   startMinimized: false,
   launchAtStartup: false,
-  theme: "light",
+  theme: "system",
   palette: "ocean",
   privateGrades: false,
   bellOffsetMinutes: 0,

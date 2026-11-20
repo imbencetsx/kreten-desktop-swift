@@ -11,11 +11,9 @@
     "Segoe UI",
     sans-serif;
   color: #25344b;
-  background: #edf2f9;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+  color-scheme: light dark;
   --bg: #edf2f9;
+  background: var(--bg);
   --text: #25344b;
   --muted: #6d7b90;
   --accent: #3266b8;
@@ -81,6 +79,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #111724;
+  background: var(--bg);
   --text: #e3eaf6;
   --muted: #9eacc1;
   --accent: var(--accent-bright);
@@ -97,8 +96,16 @@
   --warning: #e0b06c;
   --danger: #e599a3;
 }
+:root[data-theme="light"] {
+  color-scheme: light;
+  background: var(--bg);
+}
 * {
   box-sizing: border-box;
+}
+html {
+  background: var(--bg);
+  scrollbar-color: var(--border) transparent;
 }
 body {
   margin: 0;
@@ -107,6 +114,21 @@ body {
   background: var(--bg);
   font-size: 14px;
   line-height: 1.55;
+  scrollbar-color: var(--border) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 body::before {
   content: "";

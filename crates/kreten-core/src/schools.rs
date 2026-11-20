@@ -113,5 +113,3 @@ mod tests {
         assert_eq!(search_key("ÁRVÍZTŰRŐ"), "arvizturo");
     }
 }
-
-

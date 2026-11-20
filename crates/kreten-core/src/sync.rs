@@ -382,9 +382,12 @@ fn class_averages_visible<'a>(sources: impl Iterator<Item = &'a Value>) -> Optio
     sources
         .filter_map(|value| {
             value
-                .pointer("/Intezmeny/TestreszabasBeallitasok/IsOsztalyAtlagMegjeleniteseEllenorzoben")
+                .pointer(
+                    "/Intezmeny/TestreszabasBeallitasok/IsOsztalyAtlagMegjeleniteseEllenorzoben",
+                )
                 .or_else(|| {
-                    value.pointer("/TestreszabasBeallitasok/IsOsztalyAtlagMegjeleniteseEllenorzoben")
+                    value
+                        .pointer("/TestreszabasBeallitasok/IsOsztalyAtlagMegjeleniteseEllenorzoben")
                 })
                 .and_then(Value::as_bool)
         })
@@ -393,7 +396,10 @@ fn class_averages_visible<'a>(sources: impl Iterator<Item = &'a Value>) -> Optio
 
 /// Unique study-task UIDs, the student's active class first.
 fn study_task_uids(groups: &Value) -> Vec<String> {
-    let mut groups: Vec<&Value> = groups.as_array().map(|g| g.iter().collect()).unwrap_or_default();
+    let mut groups: Vec<&Value> = groups
+        .as_array()
+        .map(|g| g.iter().collect())
+        .unwrap_or_default();
     let rank = |g: &Value| {
         let inactive = g.get("IsAktiv").and_then(Value::as_bool) == Some(false);
         let not_class = g.get("Tipus").and_then(Value::as_str) != Some("Osztaly");

@@ -69,6 +69,8 @@ Tokens never enter the interface, browser storage, logs, or URLs sent to a third
 
 ## Development and verification
 
+The native SwiftUI app has its own [macOS build and verification instructions](macos/README.md).
+
 ```sh
 cargo test -p kreten-core
 cargo fmt --all -- --check
@@ -77,6 +79,15 @@ npm test
 npm run build
 npm audit
 ```
+
+Before committing, review `git status --short`, `git diff --check`, and
+`git diff --cached` after staging. Keep credentials, OAuth callbacks, real school
+responses, account exports, and screenshots containing personal data out of Git.
+Use synthetic fixtures like the existing demo data. `.gitignore` excludes local
+environment files, signing keys, account stores, and build/Xcode user files; it
+does not protect files already tracked or secrets pasted into source code.
+The KRÉTA mobile client ID and shared `apiKey` header are upstream protocol
+constants (see [protocol notes](docs/API.md)), not personal account tokens.
 
 On a Debian/Ubuntu development machine without sudo, `python3 scripts/bootstrap-linux-rootless.py` extracts development packages into `/tmp/kreten-native-deps`. Then prefix native cargo/npm commands with `scripts/check-native.sh`. This is a development convenience, not an installer or runtime dependency bundle.
 

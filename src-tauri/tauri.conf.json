@@ -17,8 +17,7 @@
       "height": 900,
       "minWidth": 900,
       "minHeight": 640,
-      "center": true,
-      "backgroundColor": "#edf1f8"
+      "center": true
     }],
     "security": {
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data: blob:; connect-src ipc: http://ipc.localhost; font-src 'self'; object-src 'none'; base-uri 'self'; frame-src 'none'"

@@ -1,11 +1,46 @@
+# Dependencies and generated builds
 /target/
 /node_modules/
 /dist/
 /src-tauri/gen/
 *.tsbuildinfo
+/macos/build/
+DerivedData/
+*.xcarchive/
+*.dSYM/
+
+# Local configuration and credentials (examples must contain placeholders only)
 *.log
 .env
 .env.*
 !.env.example
-.DS_Store
+.envrc
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+.npmrc
+.netrc
 
+# Account tokens and school data, including encrypted stores and local keys
+store.enc
+store.lock
+key-storage
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Machine-specific editor and OS files
+.DS_Store
+.idea/
+xcuserdata/
+*.xcuserstate
+*.swp
+*.swo
+*~

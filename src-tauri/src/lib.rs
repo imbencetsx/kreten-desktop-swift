@@ -68,6 +68,15 @@ fn account_matches(core: &Core, account_id: &str) -> Result<(), String> {
     }
 }
 
+fn apply_window_theme(window: &WebviewWindow, theme: &str) {
+    let tauri_theme = match theme {
+        "dark" => Some(tauri::Theme::Dark),
+        "light" => Some(tauri::Theme::Light),
+        _ => None,
+    };
+    let _ = window.set_theme(tauri_theme);
+}
+
 fn show_main(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
@@ -334,6 +343,7 @@ async fn update_settings(
     state.refresh_requested.store(true, Ordering::Release);
     match core.update_settings(settings) {
         Ok(snapshot) => {
+            apply_window_theme(&window, &snapshot.settings.theme);
             update_tray_language(&app, &snapshot.settings.language);
             publish(&app, &snapshot);
             Ok(snapshot)
@@ -720,10 +730,12 @@ pub fn run() {
                 .tray_available
                 .store(tray_available, Ordering::Release);
             update_tray_language(app.handle(), &settings.language);
-            if tray_available
-                && (settings.start_minimized || std::env::args().any(|arg| arg == "--background"))
-            {
-                if let Some(window) = app.get_webview_window("main") {
+            if let Some(window) = app.get_webview_window("main") {
+                apply_window_theme(&window, &settings.theme);
+                if tray_available
+                    && (settings.start_minimized
+                        || std::env::args().any(|arg| arg == "--background"))
+                {
                     let _ = window.hide();
                 }
             }
