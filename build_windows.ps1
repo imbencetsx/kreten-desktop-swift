@@ -1,1 +1,0 @@
-build_nsis.ps1

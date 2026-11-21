@@ -1,94 +1,62 @@
-<p align="center"><img src="public/brand/logo-dark.png" width="138" alt="KRETÉN"></p>
+<p align="center"><img src="assets/brand/logo-dark.png" width="138" alt="KRETÉN"></p>
 
-# KRETÉN Desktop
+# KRETÉN for macOS
 
-A local-first KRÉTA desktop client for Linux, Windows, and macOS. The Rust application uses Firka's mobile OAuth/API protocol and KRETEN's glass interface and branding. API requests, sessions, cache, background refresh, notifications, and desktop integration run in Rust. The bundled React interface runs inside the operating system's webview; the installed application needs no Python, Node.js, web server, or hosted proxy.
+A native SwiftUI rewrite of KRETÉN Desktop for macOS 26+, built around Liquid Glass.
+No webview, Node or Rust runtime: KRÉTA OAuth, sync, change notifications and the
+encrypted cache are all Swift.
 
-## Run from source
+## Run
 
-Install Rust (1.90+), Node.js (22.12+), and the platform prerequisites below, then:
-
-```sh
-npm ci
-npm run tauri dev
-```
-
-Linux / Ubuntu prerequisites:
+Open `Kreten.xcodeproj` in Xcode 26+ and press ⌘R, or:
 
 ```sh
-./scripts/install-linux-deps.sh
+scripts/build-app.sh   # → build/KRETEN.app (ad-hoc signed)
+scripts/test-core.sh   # core logic checks (OAuth/PKCE, diffing, parsing, calendar)
+scripts/build-dmg.sh   # → dist/KRETEN-<version>.dmg drag-and-drop installer
 ```
 
-Windows prerequisites: Microsoft C++ Build Tools with the **Desktop development with C++** workload, the Windows SDK, Rust's MSVC toolchain, and Microsoft Edge WebView2 Runtime. Run the same npm commands in a developer terminal.
+`build-dmg.sh` builds a universal (arm64 + x86_64) Release app and packages it with an
+`Applications` shortcut. Options: `-o <dir>`, `-a arm64|x86_64|universal`, `-c` (clean),
+`--no-layout` (skip Finder window styling). Without signing the app is ad-hoc signed,
+so other Macs need right-click → *Open* on first launch. For a distributable build set
+`SIGN_IDENTITY="Developer ID Application: …"` and optionally `NOTARY_PROFILE=<profile>`
+(from `xcrun notarytool store-credentials`) to notarize and staple the DMG.
 
-macOS prerequisites: Xcode Command Line Tools (`xcode-select --install`), Rust (`rustup target add aarch64-apple-darwin x86_64-apple-darwin`), and Node.js.
+Launch arguments for development: `-demo` (sample data, no KRÉTA traffic) and
+`-page grades` (open a specific page). Put `-page` before `-demo`.
 
-### Build installers
+## Layout
 
-Dedicated build scripts are provided for each operating system target:
+| Path | What |
+| --- | --- |
+| `Kreten/Core` | KRÉTA protocol: `KretaCore` actor (sessions, token rotation, sync, diffing), `KretaAPI`, `OAuth` (PKCE), `SecureStore` (AES-GCM file, key in Keychain), `JSON`, `Day` (Budapest time) |
+| `Kreten/Model` | `AppModel` (observable app state, polling, notifications), typed diary views (`Diary.swift`), school calendar progress, preferences, demo data |
+| `Kreten/UI` | SwiftUI: root split view, sidebar, pages, login, settings, menu bar panel, window backdrop |
+| `Tests` | Core logic checks run by `scripts/test-core.sh` |
+| `scripts` | Build, test and DMG packaging scripts |
+| `docs`, `assets` | KRÉTA/Firka protocol notes, upstream licenses, brand source assets |
 
-```sh
-# 1. Linux Debian/Ubuntu (.deb package)
-./build_deb.sh
-# or: npm run build:deb
+Cards use native Liquid Glass surfaces, grouped per page for shared background sampling.
 
-# 2. Windows NSIS setup installer (.exe)
-# In PowerShell on Windows:
-.\build_nsis.ps1
-# or in Bash / Git Bash / WSL / CI:
-./build_nsis.sh
-# or: npm run build:nsis
+## Window transparency
 
-# 3. macOS Drag-and-Drop Apple Disk Image (.dmg)
-./build_dmg.sh
-# or: npm run build:dmg
-```
+*Settings → Megjelenés → Ablak* has three backdrops:
 
-All build scripts accept options such as `-o/--output <dir>`, `-c/--clean`, and `-d/--debug`. Generated installer packages are placed under `target/release/bundle/` (or your designated output directory). CI automatically builds and validates installers for Linux, Windows, and macOS.
+- **Átlátszó**: the desktop shows through, blurred and tinted. *Átlátszatlanság* sets
+  the tint opacity, *Elmosás* sets the blur radius, and the tint can follow the
+  accent color. The blur uses the private window-server call
+  `CGSSetWindowBackgroundBlurRadius`, resolved at runtime, so the slider is
+  disabled if a future macOS removes it.
+- **Üveg**: the system material.
+- **Színátmenet**: a slowly moving two-color mesh gradient.
 
-To inspect just the interface in a browser, use `npm run dev` and choose the explicitly labeled demo; authentication and native functions require the desktop app.
+## Notes
 
-## Everyday use
-
-- **Sign in:** select your institution (optional) and open the official KRÉTA login. It appears unchanged in its own private window. The app uses the same Android OAuth client, scopes, redirect URI, authorization-code exchange and refresh grant as Firka, with a fresh PKCE verifier and state for each attempt. Your password is handled by KRÉTA's page.
-- **Background operation:** the main window's × hides it. The tray icon can reopen it, refresh now, pause background refresh, open settings, or fully quit. Launching the app again brings the existing instance forward.
-- **Notifications:** Rust periodically checks school data independently of the window. The first successful sync establishes a silent baseline; later changes produce native notifications and a local notification history. This is local polling, not a Firebase relay. The default interval is five minutes and is configurable.
-- **Ubuntu top bar:** Ubuntu's AppIndicator extension displays the tray menu. On other GNOME installations, enable the AppIndicator/KStatusNotifierItem extension. If tray creation fails, closing the window quits instead of leaving an inaccessible process.
-- **Windows tray:** the icon may initially appear in the notification-area overflow. Native toast behavior should be checked from the installed app, since development executables can have different notification identity.
-- **Autostart:** enable launch at login in settings. The app can start minimized and continue checking while the window is hidden. A sleeping or powered-off computer cannot poll; refreshing resumes after wake/start.
-- **Offline use:** the latest successfully fetched data stays available. Individual unavailable school APIs report their errors while other sections remain usable.
-- **Homework checkboxes:** completion is a local personal checklist; it does not submit work to a teacher.
-
-## Local data and security
-
-The application stores account tokens, cached data, preferences, and notification history in an authenticated encrypted store inside the OS application-local-data directory for `hu.kreten.desktop` (typically `$XDG_DATA_HOME/hu.kreten.desktop` or `~/.local/share/hu.kreten.desktop` on Linux and `%LOCALAPPDATA%\hu.kreten.desktop` on Windows).
-
-The encryption key is held in the OS credential store. On Unix systems without an available Secret Service, a clearly reported fallback uses a separate local key file with mode `0600` inside a `0700` directory. That fallback protects against other OS users, not software already running as you. Windows requires the credential store. Do not delete or move the key independently of the encrypted store. Logging out removes the account's locally stored session and school data; it does not revoke sessions in other KRÉTA apps.
-
-Tokens never enter the interface, browser storage, logs, or URLs sent to a third-party service. The OAuth window has no desktop IPC capabilities. The application has no analytics, hosted account service, Firebase registration, or cloud sync. School API requests and the hosted authentication page necessarily communicate with KRÉTA.
-
-## Development and verification
-
-The native SwiftUI app has its own [macOS build and verification instructions](macos/README.md).
-
-```sh
-cargo test -p kreten-core
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-npm test
-npm run build
-npm audit
-```
-
-Before committing, review `git status --short`, `git diff --check`, and
-`git diff --cached` after staging. Keep credentials, OAuth callbacks, real school
-responses, account exports, and screenshots containing personal data out of Git.
-Use synthetic fixtures like the existing demo data. `.gitignore` excludes local
-environment files, signing keys, account stores, and build/Xcode user files; it
-does not protect files already tracked or secrets pasted into source code.
-The KRÉTA mobile client ID and shared `apiKey` header are upstream protocol
-constants (see [protocol notes](docs/API.md)), not personal account tokens.
-
-On a Debian/Ubuntu development machine without sudo, `python3 scripts/bootstrap-linux-rootless.py` extracts development packages into `/tmp/kreten-native-deps`. Then prefix native cargo/npm commands with `scripts/check-native.sh`. This is a development convenience, not an installer or runtime dependency bundle.
-
-See [tasks.md](tasks.md) for the live implementation handoff and exact validation status, [feature coverage](docs/FEATURES.md), [upstream provenance](docs/UPSTREAM.md), and [third-party notices](THIRD_PARTY_NOTICES.md). Do not infer live account or Windows runtime verification from a passing unit test or Linux build. The referenced KRETEN snapshot has no blanket license; consult the notices before redistribution.
+- The data store is new (`~/Library/Containers/app.kreten.desktop.mac`), so log in
+  once again. The OAuth flow runs in an isolated, non-persistent `WKWebView`; the
+  app never sees the password.
+- Closing the window keeps KRETÉN syncing from the menu bar extra. *Kilépés* quits.
+- UI is Hungarian only for now.
+- See [upstream protocol notes](docs/UPSTREAM.md) and
+  [third-party notices](THIRD_PARTY_NOTICES.md) before redistributing.

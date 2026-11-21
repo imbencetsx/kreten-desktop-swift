@@ -11,7 +11,7 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International in
 [`docs/licenses/Firka.LICENSE.txt`](docs/licenses/Firka.LICENSE.txt).
 License text: <https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode>.
 
-KRETÉN Desktop is a Rust/Tauri desktop reimplementation, using Firka as a reference
+KRETÉN for macOS is a native SwiftUI desktop reimplementation, using Firka as a reference
 for mobile OAuth, API contracts, offline behavior and notification features. The
 platform, UI, persistence and background lifecycle differ from Firka. No Firka
 application icons, bundled fonts or screenshots are included. This notice does
@@ -32,27 +32,24 @@ retrieved on 2026-09-23 at the project owner's request. This project reuses the
 same logos at the user's explicit request; no independent license for the logos
 or the web repository is asserted here.
 
-- `public/brand/logo-dark.png`: <https://e-kreten.github.io/src/logo-dark.png>.
-- `public/brand/logo-light.png`: <https://e-kreten.github.io/src/logo.png>.
-- Desktop bundle/tray icons derived from those assets retain the same provenance.
+- `assets/brand/logo-dark.png`: <https://e-kreten.github.io/src/logo-dark.png>.
+- `assets/brand/logo-light.png`: <https://e-kreten.github.io/src/logo.png>.
+- The app icon and in-app logo (`Kreten/Assets.xcassets`) derived from those assets retain the same provenance.
 
 The KRETÉN web project is a design and behavior reference for the desktop UI.
-See [`public/brand/ASSETS.md`](public/brand/ASSETS.md) for the original asset note.
+See [`assets/brand/ASSETS.md`](assets/brand/ASSETS.md) for the original asset note.
 
 ## Fonts
 
-- `public/fonts/PixelifySans.ttf`: Pixelify Sans, Copyright 2021 The Pixelify
-  Sans Project Authors (<https://github.com/eifetx/Pixelify-Sans>), used by the
-  optional "Pixel" interface style. Licensed under the SIL Open Font License 1.1;
-  the full license text is shipped next to the font as
-  `public/fonts/PixelifySans-OFL.txt`.
+- `Kreten/Resources/Fonts/GeistMonoNerdFontMono-*.otf`: Geist Mono by Vercel
+  (<https://github.com/vercel/geist-font>), patched by Nerd Fonts
+  (<https://www.nerdfonts.com>). Licensed under the SIL Open Font License 1.1.
 
 ## Dependencies and service names
 
-Rust and JavaScript dependencies keep their respective licenses. Exact versions
-are recorded in `Cargo.lock` and `package-lock.json`; this notice does not replace
-their license files. Tauri, React, Lucide and the remaining packages are separate
-projects and do not endorse this application.
+The app has no third-party package dependencies; it links only Apple system
+frameworks (SwiftUI, AppKit, Charts, WebKit, CryptoKit, Security,
+ServiceManagement, UserNotifications).
 
 KRÉTA and service names identify the remote services this independent client
 connects to. This project is not the official KRÉTA application.

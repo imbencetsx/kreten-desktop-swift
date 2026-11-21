@@ -100,12 +100,12 @@ Consequently, "everything local" must be interpreted as the requested desktop
 design, not as a claim that the Android app never contacts any notification
 backend.
 
-KRETÉN Desktop uses a resident Rust process and local polling. Native desktop
+KRETÉN for macOS uses a resident Swift process and local polling. Native desktop
 notifications are generated from locally compared KRÉTA responses. It does not
 need Firebase credentials, Firka backend keys, a cloud relay, or a hosted session
 server. These are polling-based notifications, not a KRÉTA server push stream.
-They require the process to be running and the computer awake; tray Quit stops
-the process and its background checks.
+They require the process to be running and the computer awake; *Kilépés* in the
+menu bar extra stops the process and its background checks.
 
 Firka seeds each account/category's initial notification baseline silently, then
 reports new grades, homework, tests, absences, messages and timetable changes.
@@ -116,8 +116,8 @@ change notifications and application binary update delivery are separate feature
 
 KRETEN's `static/brand/logo-dark.png` is the black wordmark for light surfaces;
 `static/brand/logo-light.png` is the white wordmark for dark surfaces. Both are
-138 × 60 RGBA PNGs, copied without modification to `public/brand/` here.
-`public/brand/ASSETS.md` preserves the upstream provenance note. Desktop icon
+138 × 60 RGBA PNGs, copied without modification to `assets/brand/` here.
+`assets/brand/ASSETS.md` preserves the upstream provenance note. Desktop icon
 variants are derived from that same wordmark for packaging and tray use.
 
 See [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) for the actual upstream
