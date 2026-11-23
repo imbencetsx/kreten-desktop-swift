@@ -1,10 +1,7 @@
-# Dependencies and generated builds
-/target/
-/node_modules/
+# Generated builds and installers
+/build/
 /dist/
-/src-tauri/gen/
-*.tsbuildinfo
-/macos/build/
+*.dmg
 DerivedData/
 *.xcarchive/
 *.dSYM/
@@ -22,7 +19,6 @@ DerivedData/
 *.pfx
 *.mobileprovision
 *.provisionprofile
-.npmrc
 .netrc
 
 # Account tokens and school data, including encrypted stores and local keys
