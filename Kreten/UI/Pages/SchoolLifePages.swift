@@ -59,7 +59,7 @@ struct MessagesPage: View {
                                     Button { model.openSchoolWebsite() } label: {
                                         Label("\(name) · KRÉTA megnyitása", systemImage: "paperclip")
                                     }
-                                    .buttonStyle(.glass)
+                                    .buttonStyle(.glassy)
                                 }
                                 Text("A mellékleteket a hivatalos KRÉTA felületén töltheted le.").font(.caption).foregroundStyle(.tertiary)
                             }
@@ -197,7 +197,7 @@ struct ConsultationsPage: View {
 
     var body: some View {
         PageScaffold(eyebrow: "Egy kis személyes figyelem", title: "Fogadóórák") {
-            Button { model.openSchoolWebsite() } label: { Label("Hivatalos KRÉTA", systemImage: "safari") }.buttonStyle(.glass)
+            Button { model.openSchoolWebsite() } label: { Label("Hivatalos KRÉTA", systemImage: "safari") }.buttonStyle(.glassy)
         } content: {
             if model.diary.consultations.isEmpty {
                 Card { EmptyState(title: "Jelenleg nincs elérhető fogadóóra.") }
@@ -218,7 +218,7 @@ struct ConsultationsPage: View {
                         HStack {
                             if let b = c.booked { Pill(text: "Lefoglalva · \(b)", color: .green) }
                             Spacer()
-                            Button("Részletek") { detail = c }.buttonStyle(.glass)
+                            Button("Részletek") { detail = c }.buttonStyle(.glassy)
                         }
                     }
                 }
@@ -290,7 +290,7 @@ struct LepPage: View {
                             Spacer()
                             if e.canDecide {
                                 if pending == e.id { ProgressView().controlSize(.small) }
-                                Button("Elutasítás") { confirm = (e, false) }.buttonStyle(.glass)
+                                Button("Elutasítás") { confirm = (e, false) }.buttonStyle(.glassy)
                                 Button("Engedélyezés") { confirm = (e, true) }.buttonStyle(.borderedProminent)
                             }
                         }

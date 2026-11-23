@@ -105,7 +105,7 @@ struct AccountSwitcher: View {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+        .surface(.rect(cornerRadius: 16), interactive: true)
         .confirmationDialog("Kijelentkezel?", isPresented: Binding(get: { confirmLogout != nil }, set: { if !$0 { confirmLogout = nil } }),
                             presenting: confirmLogout) { a in
             Button("Kijelentkezés", role: .destructive) { model.logout(a) }

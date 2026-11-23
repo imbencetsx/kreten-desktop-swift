@@ -32,7 +32,7 @@ struct DashboardPage: View {
 
         PageScaffold(eyebrow: Format.longDate(Date()), title: "Szia, \(model.firstName)!") {
             Button("Heti órarend") { model.page = .timetable }
-                .buttonStyle(.glass)
+                .buttonStyle(.glassy)
         } content: {
             AdaptiveColumns {
                 LiveLessonCard()
@@ -43,11 +43,11 @@ struct DashboardPage: View {
                     if schedule.isEmpty {
                         EmptyState(title: "Nincs ismert következő tanóra.")
                     } else {
-                        TimelineView(.periodic(from: .now, by: 30)) { ctx in
+                        TimelineView(.every(30, paused: !model.windowVisible)) { ctx in
                             let now = model.schoolNow(ctx.date)
                             VStack(spacing: 0) {
                                 ForEach(schedule) { l in
-                                    LessonRow(lesson: l, active: !l.cancelled && (l.startDate ?? .distantFuture) <= now && now < (l.endDate ?? .distantPast)) {
+                                    LessonRow(lesson: l, active: l.isActive(at: now)) {
                                         detail = l
                                     }
                                 }
@@ -134,13 +134,15 @@ struct DashboardPage: View {
 }
 
 /// What's happening right now, with a live countdown and a thin progress line.
+/// Ticks every second, so it only scans the pre-sorted `diary.timeline`, and the
+/// surface sits outside the timeline so it isn't rebuilt on every tick.
 struct LiveLessonCard: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+        TimelineView(.every(1, paused: !model.windowVisible)) { ctx in
             let now = model.schoolNow(ctx.date)
-            let live = LiveStatus.compute(model.diary.lessons, now: now)
+            let live = LiveStatus.compute(model.diary.timeline, now: now)
             let color: Color = live.kind == .breakTime ? .orange : .accentColor
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top, spacing: 20) {
@@ -162,11 +164,12 @@ struct LiveLessonCard: View {
                     Meter(value: live.progress(at: now), color: color, height: 4)
                 }
             }
-            .padding(18)
-            .panel()
-            .contentShape(.rect)
-            .onTapGesture { model.page = .timetable }
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panel()
+        .contentShape(.rect)
+        .onTapGesture { model.page = .timetable }
     }
 
     @ViewBuilder private func trailing(_ live: LiveStatus, now: Date) -> some View {
@@ -203,8 +206,8 @@ struct AverageCard: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        let grades = model.diary.grades
-        let avg = grades.average
+        let diary = model.diary
+        let avg = diary.gradeAverage
         Card {
             Text("TANÉVI ÁTLAG").font(.mono(11, .medium)).foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline) {
@@ -216,7 +219,7 @@ struct AverageCard: View {
             }
             Meter(value: model.gradesHidden ? 0 : ((avg ?? 1) - 1) / 4, color: model.gradesHidden ? .secondary : averageColor(avg), height: 4)
             HStack {
-                Text("\(grades.count) jegy · \(grades.bySubject.count) tárgy").font(.mono(11)).foregroundStyle(.secondary)
+                Text("\(diary.grades.count) jegy · \(diary.subjectCount) tárgy").font(.mono(11)).foregroundStyle(.secondary)
                 Spacer()
                 LinkButton(title: "Statisztikák") { model.page = .statistics }
             }

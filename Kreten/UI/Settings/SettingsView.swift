@@ -86,7 +86,22 @@ struct AppearanceSettings: View {
             } header: {
                 Text("Ablak")
             } footer: {
-                Text("A változás azonnal látszik a fő ablakon.").font(.caption).foregroundStyle(.secondary)
+                Text(model.reducedEffects
+                     ? "Csökkentett effekteknél az ablak háttere egyszínű és nem átlátszó."
+                     : "A változás azonnal látszik a fő ablakon.").font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                Picker("Effektek", selection: $model.prefs.effects) {
+                    ForEach(EffectsMode.allCases) { mode in
+                        Text(mode == .automatic ? "Automatikus (\(Hardware.isLowEnd ? "csökkentett" : "teljes"))" : mode.label).tag(mode)
+                    }
+                }
+            } header: {
+                Text("Teljesítmény")
+            } footer: {
+                Text("A csökkentett mód üveghatás és elmosás nélküli, egyszínű felületeket és kevesebb animációt használ. Régebbi, integrált grafikájú Maceken sokkal gördülékenyebb.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

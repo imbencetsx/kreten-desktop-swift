@@ -13,9 +13,16 @@ struct Grade: Identifiable, Hashable {
     var teacher: String
     var type: String
     var kind: String
+    /// Numeric 1–5 mark that counts toward averages (not a semester/year-end mark).
+    /// Stored: averages filter on it constantly, and the check used to run a regex.
+    let isNumeric: Bool
 
-    var isNumeric: Bool {
-        (1...5).contains(value) && kind.range(of: "felev|evveg|félév|évvég", options: [.regularExpression, .caseInsensitive]) == nil
+    init(id: String, subject: String, value: Int, display: String, weight: Double, date: String,
+         topic: String, teacher: String, type: String, kind: String) {
+        self.id = id; self.subject = subject; self.value = value; self.display = display; self.weight = weight
+        self.date = date; self.topic = topic; self.teacher = teacher; self.type = type; self.kind = kind
+        let k = kind.lowercased()
+        isNumeric = (1...5).contains(value) && !["felev", "evveg", "félév", "évvég"].contains { k.contains($0) }
     }
 
     static func parse(_ data: JSON) -> [Grade] {
@@ -123,17 +130,18 @@ struct Lesson: Identifiable, Hashable {
     var substitute: String
     var cancelled: Bool
     var subjectID = ""
+    // Parsed once in `parse`: views read these on every render and every clock tick.
+    private(set) var startDate: Date?
+    private(set) var endDate: Date?
+    private(set) var timeRange = ""
 
-    var startDate: Date? { Day.timestamp(start) }
-    var endDate: Date? { Day.timestamp(end) }
-    var timeRange: String { "\(Format.time(start))–\(Format.time(end))" }
     var displayTeacher: String { substitute.isEmpty ? teacher : substitute }
 
     static func parse(_ data: JSON) -> [Lesson] {
         data.rows.enumerated().map { i, l in
             let subject = l["Tantargy"].name
             let state = l["Allapot"].isObject ? l["Allapot"]["Nev"].text : l["Allapot"].text
-            return Lesson(
+            var lesson = Lesson(
                 id: l["Uid"].text.isEmpty ? "\(i)" : l["Uid"].text,
                 subject: subject.isEmpty ? l["Nev"].text : subject,
                 start: l["KezdetIdopont"].text, end: l["VegIdopont"].text,
@@ -144,7 +152,17 @@ struct Lesson: Identifiable, Hashable {
                 substitute: l["HelyettesTanarNeve"].text,
                 cancelled: (state + l["Allapot"].text).range(of: "elmarad", options: .caseInsensitive) != nil,
                 subjectID: l["Tantargy"]["Uid"].text)
+            lesson.startDate = Day.timestamp(lesson.start)
+            lesson.endDate = Day.timestamp(lesson.end)
+            lesson.timeRange = "\(Format.time(lesson.start))–\(Format.time(lesson.end))"
+            return lesson
         }.sorted { $0.start < $1.start }
+    }
+
+    /// Whether the lesson is running at `now` (school time).
+    func isActive(at now: Date) -> Bool {
+        guard !cancelled, let s = startDate, let e = endDate else { return false }
+        return s <= now && now < e
     }
 }
 
@@ -165,11 +183,19 @@ struct LiveStatus: Equatable {
         return min(1, max(0, now.timeIntervalSince(start) / end.timeIntervalSince(start)))
     }
 
-    static func compute(_ lessons: [Lesson], now: Date) -> LiveStatus {
-        let items = lessons.filter { !$0.cancelled }.compactMap { l -> (Lesson, Date, Date)? in
+    /// Held lessons with valid times, sorted by start. Built once per sync, so the
+    /// once-a-second live card only scans it.
+    typealias Timeline = [(Lesson, Date, Date)]
+    static func timeline(_ lessons: [Lesson]) -> Timeline {
+        lessons.filter { !$0.cancelled }.compactMap { l -> (Lesson, Date, Date)? in
             guard let s = l.startDate, let e = l.endDate, e > s else { return nil }
             return (l, s, e)
         }.sorted { $0.1 < $1.1 }
+    }
+
+    static func compute(_ lessons: [Lesson], now: Date) -> LiveStatus { compute(timeline(lessons), now: now) }
+
+    static func compute(_ items: Timeline, now: Date) -> LiveStatus {
         let active = items.first { $0.1 <= now && now < $0.2 }
         let upcoming = items.first { $0.1 > now }
         let previous = items.filter { $0.2 <= now }.max { $0.2 < $1.2 }

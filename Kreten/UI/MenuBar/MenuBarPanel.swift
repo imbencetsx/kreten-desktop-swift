@@ -18,9 +18,9 @@ struct MenuBarPanel: View {
             }
 
             if model.hasAccount {
-                TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                TimelineView(.every(1)) { ctx in
                     let now = model.schoolNow(ctx.date)
-                    let live = LiveStatus.compute(model.diary.lessons, now: now)
+                    let live = LiveStatus.compute(model.diary.timeline, now: now)
                     VStack(alignment: .leading, spacing: 6) {
                         Text(live.label).font(.mono(10, .medium)).foregroundStyle(.secondary)
                         HStack(alignment: .firstTextBaseline) {
@@ -39,7 +39,7 @@ struct MenuBarPanel: View {
                         }
                     }
                     .padding(12)
-                    .glassEffect(.regular.tint(Color.accentColor.opacity(0.1)), in: .rect(cornerRadius: 16))
+                    .surface(.rect(cornerRadius: 16), tint: Color.accentColor.opacity(0.1))
                 }
 
                 HStack(spacing: 8) {
@@ -90,7 +90,7 @@ private struct QuickStat: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        .surface(.rect(cornerRadius: 12))
     }
 }
 

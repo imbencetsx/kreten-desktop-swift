@@ -51,6 +51,7 @@ struct MainSplitView: View {
 /// a long animated transition of a whole page reads as lag).
 struct PageHost: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.reducedEffects) private var reduced
 
     var body: some View {
         ZStack {
@@ -58,7 +59,8 @@ struct PageHost: View {
                 .id(model.page)
                 .transition(.opacity)
         }
-        .animation(.easeOut(duration: 0.14), value: model.page)
+        // Cross-fading two full pages is a heavy composite on weak GPUs.
+        .animation(reduced ? nil : .easeOut(duration: 0.14), value: model.page)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -149,7 +151,7 @@ struct SyncStatus: View {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
                 Text("\(s.errors.count) forrás nem frissült")
             } else if let last = s.lastSyncedAt {
-                TimelineView(.periodic(from: .now, by: 30)) { _ in
+                TimelineView(.every(30, paused: !model.windowVisible)) { _ in
                     Text("Frissítve \(Format.relative(last))")
                 }
             }
@@ -181,7 +183,7 @@ struct ToastOverlay: View {
             Label(toast.text, systemImage: toast.isError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                 .font(.callout.weight(.medium))
                 .padding(.horizontal, 16).padding(.vertical, 10)
-                .glassEffect(.regular.tint(toast.isError ? .red.opacity(0.25) : nil), in: .capsule)
+                .surface(.capsule, tint: toast.isError ? .red.opacity(0.25) : nil)
                 .padding(.bottom, 22)
                 .transition(.move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.9)))
                 .id(toast.id)
@@ -198,7 +200,7 @@ struct StartupErrorView: View {
         } description: {
             Text(message)
         } actions: {
-            Button("Kilépés") { NSApp.terminate(nil) }.buttonStyle(.glass)
+            Button("Kilépés") { NSApp.terminate(nil) }.buttonStyle(.glassy)
         }
     }
 }

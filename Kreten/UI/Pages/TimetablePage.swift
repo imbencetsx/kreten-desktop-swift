@@ -70,19 +70,19 @@ struct WeekSwitcher: View {
         GlassEffectContainer(spacing: 8) {
             HStack(spacing: 8) {
                 Button { offset -= 1 } label: { Image(systemName: "chevron.left").frame(width: 18, height: 18) }
-                    .buttonStyle(.glass).buttonBorderShape(.circle)
+                    .buttonStyle(.glassy).buttonBorderShape(.circle)
                     .keyboardShortcut(.leftArrow, modifiers: [.command])
                 Text(label)
                     .font(.mono(12, .medium))
                     .contentTransition(.numericText())
                     .padding(.horizontal, 14).padding(.vertical, 8)
-                    .glassEffect(.regular, in: .capsule)
+                    .surface(.capsule)
                 Button { offset += 1 } label: { Image(systemName: "chevron.right").frame(width: 18, height: 18) }
-                    .buttonStyle(.glass).buttonBorderShape(.circle)
+                    .buttonStyle(.glassy).buttonBorderShape(.circle)
                     .keyboardShortcut(.rightArrow, modifiers: [.command])
                 if offset != home {
                     Button(home == 0 ? "Ez a hét" : "Jövő hét") { offset = home }
-                        .buttonStyle(.glass)
+                        .buttonStyle(.glassy)
                         .glassEffectID("today", in: ns)
                         .transition(.scale.combined(with: .opacity))
                 }
@@ -120,7 +120,7 @@ struct DayColumn: View {
                         .padding(8)
                 }
                 .buttonStyle(.plain)
-                .glassEffect(.regular.tint(.orange.opacity(0.2)).interactive(), in: .rect(cornerRadius: 10))
+                .surface(.rect(cornerRadius: 10), tint: .orange.opacity(0.2), interactive: true)
                 .help(tests.map { "\($0.subject): \($0.topic)" }.joined(separator: "\n"))
             }
             if lessons.isEmpty {
@@ -129,11 +129,11 @@ struct DayColumn: View {
                     .frame(maxWidth: .infinity, minHeight: 64)
                     .panel(radius: 12)
             }
-            TimelineView(.periodic(from: .now, by: 30)) { ctx in
+            TimelineView(.every(30, paused: !model.windowVisible)) { ctx in
                 let now = model.schoolNow(ctx.date)
                 VStack(spacing: 8) {
                     ForEach(lessons) { l in
-                        LessonTile(lesson: l, tests: tests.filter { $0.matches(l) }, current: !l.cancelled && (l.startDate ?? .distantFuture) <= now && now < (l.endDate ?? .distantPast)) { open(l) }
+                        LessonTile(lesson: l, tests: tests.filter { $0.matches(l) }, current: l.isActive(at: now)) { open(l) }
                     }
                 }
             }
@@ -187,10 +187,7 @@ struct LessonTile: View {
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(.rect(cornerRadius: 12))
-            .glassEffect(
-                .regular.tint(tint?.opacity(current ? 0.2 : 0.12) ?? .clear).interactive(),
-                in: .rect(cornerRadius: 12)
-            )
+            .surface(.rect(cornerRadius: 12), tint: tint?.opacity(current ? 0.2 : 0.12), interactive: true)
         }
         .buttonStyle(.plain)
     }

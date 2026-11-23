@@ -51,6 +51,15 @@ Cards use native Liquid Glass surfaces, grouped per page for shared background s
 - **Üveg**: the system material.
 - **Színátmenet**: a slowly moving two-color mesh gradient.
 
+## Performance
+
+*Settings → Megjelenés → Teljesítmény → Effektek* chooses between full Liquid Glass and
+reduced effects. *Automatikus* (the default) reduces them on Intel Macs with an integrated
+or pre-Mac2-family GPU (e.g. a 2012 MacBook Pro with HD 4000). Reduced effects use an opaque window
+with no window-server blur, flat cards instead of glass, bordered buttons, no page
+cross-fade and a still gradient. Clocks (live lesson countdown, sync status) pause while
+the main window is hidden or fully covered.
+
 ## Notes
 
 - The data store is new (`~/Library/Containers/app.kreten.desktop.mac`), so log in

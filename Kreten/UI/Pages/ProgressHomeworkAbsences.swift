@@ -6,7 +6,7 @@ struct SchoolProgressPage: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 60)) { ctx in
+        TimelineView(.every(60, paused: !model.windowVisible)) { ctx in
             let now = ctx.date
             let cal = model.diary.calendar
             let week = SchoolProgress.week(now: now)

@@ -13,7 +13,7 @@ struct GradesPage: View {
         let groups = grades.bySubject.filter { q.isEmpty || $0.name.searchKey.contains(q) }
 
         PageScaffold(eyebrow: "Értékelések", title: "Jegyek") {
-            Button("Statisztikák") { model.page = .statistics }.buttonStyle(.glass)
+            Button("Statisztikák") { model.page = .statistics }.buttonStyle(.glassy)
         } content: {
             HStack {
                 Picker("Időszak", selection: $period) {
@@ -112,7 +112,7 @@ struct TrendChart: View {
             }
             .frame(height: 170)
             .blur(radius: model.gradesHidden ? 10 : 0)
-            .overlay { if model.gradesHidden { Button("Felfedés") { model.revealGrades() }.buttonStyle(.glass) } }
+            .overlay { if model.gradesHidden { Button("Felfedés") { model.revealGrades() }.buttonStyle(.glassy) } }
         }
     }
 }
@@ -193,7 +193,7 @@ struct StatisticsPage: View {
         let groups = all.period(period).bySubject
 
         PageScaffold(eyebrow: "Statisztika", title: "Statisztikák") {
-            Button("Jegyek") { model.page = .grades }.buttonStyle(.glass)
+            Button("Jegyek") { model.page = .grades }.buttonStyle(.glassy)
         } content: {
             HStack(spacing: 12) {
                 Picker("Időszak", selection: $period) {
@@ -298,7 +298,7 @@ struct DistributionChart: View {
         }
         .frame(height: 170)
         .blur(radius: model.gradesHidden ? 10 : 0)
-        .overlay { if model.gradesHidden { Button("Felfedés") { model.revealGrades() }.buttonStyle(.glass) } }
+        .overlay { if model.gradesHidden { Button("Felfedés") { model.revealGrades() }.buttonStyle(.glassy) } }
     }
 }
 

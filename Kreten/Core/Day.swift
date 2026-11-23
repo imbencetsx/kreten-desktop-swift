@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 extension TimeZone {
     static let budapest = TimeZone(identifier: "Europe/Budapest")!
@@ -64,42 +65,89 @@ enum Day {
     /// Normalizes an API date/timestamp to its Budapest calendar day.
     static func of(_ value: JSON) -> String { of(value.text) }
     static func of(_ s: String) -> String {
-        if s.count >= 10, s.range(of: #"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?)?$"#, options: .regularExpression) != nil {
-            return String(s.prefix(10))
-        }
+        if s.utf8.count == 10, isDay(s.utf8) { return s }
+        if isLocalTimestamp(s) { return String(s.prefix(10)) }
         return timestamp(s).map(string) ?? ""
     }
 
     /// Unzoned school timestamps are Budapest wall-clock; zoned ones are absolute.
     static func timestamp(_ s: String) -> Date? {
-        if s.range(of: #"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?$"#, options: .regularExpression) != nil {
+        if isLocalTimestamp(s) {
             var t = String(s.prefix(19))
             if t.count == 16 { t += ":00" }
             return localTimestamp.date(from: t)
         }
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = iso.date(from: s) { return d }
-        iso.formatOptions = [.withInternetDateTime]
-        return iso.date(from: s)
+        return isoFractional.date(from: s) ?? iso.date(from: s)
+    }
+
+    // ISO8601DateFormatter is thread-safe; building one costs far more than parsing.
+    nonisolated(unsafe) private static let iso: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+    nonisolated(unsafe) private static let isoFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    /// `YYYY-MM-DD` (only the first 10 bytes are checked).
+    private static func isDay(_ u: String.UTF8View) -> Bool {
+        var i = 0
+        for c in u.prefix(10) {
+            let ok = (i == 4 || i == 7) ? c == UInt8(ascii: "-") : (c >= 48 && c <= 57)
+            if !ok { return false }
+            i += 1
+        }
+        return i == 10
+    }
+
+    /// `YYYY-MM-DDTHH:MM[:SS[.fff]]` with no zone: Budapest wall-clock time.
+    /// Hand-rolled instead of a regex: this runs for every lesson on every sync.
+    static func isLocalTimestamp(_ s: String) -> Bool {
+        let u = Array(s.utf8)
+        guard u.count >= 16, isDay(s.utf8), u[10] == UInt8(ascii: "T") else { return false }
+        func digits(_ r: Range<Int>) -> Bool { r.upperBound <= u.count && u[r].allSatisfy { $0 >= 48 && $0 <= 57 } }
+        guard digits(11..<13), u[13] == UInt8(ascii: ":"), digits(14..<16) else { return false }
+        if u.count == 16 { return true }
+        guard u[16] == UInt8(ascii: ":"), digits(17..<19) else { return false }
+        if u.count == 19 { return true }
+        return u[19] == UInt8(ascii: ".") && u.count > 20 && digits(20..<u.count)
     }
 }
 
 enum Format {
     static let hu = Locale(identifier: "hu_HU")
 
+    /// Formatted day labels repeat constantly across rows and re-renders; ICU
+    /// formatting is slow on older Macs, so each label is built once.
+    private static let cache = Mutex<[String: String]>([:])
+    private static func cached(_ key: String, _ make: () -> String) -> String {
+        if let hit = cache.withLock({ $0[key] }) { return hit }
+        let value = make()
+        cache.withLock { if $0.count > 2000 { $0.removeAll() }; $0[key] = value }
+        return value
+    }
+
     /// "nov. 14." or "2026. nov. 14."
     static func day(_ day: String, year: Bool = false) -> String {
-        guard let d = Day.date(day) else { return day.isEmpty ? "Nincs megadva" : day }
-        var style = Date.FormatStyle(date: .omitted, time: .omitted, locale: hu, calendar: .budapest, timeZone: .budapest)
-            .month(.abbreviated).day()
-        if year { style = style.year() }
-        return d.formatted(style)
+        guard day.utf8.count == 10 else { return day.isEmpty ? "Nincs megadva" : day }
+        return cached(year ? "y" + day : "d" + day) {
+            guard let d = Day.date(day) else { return day }
+            var style = Date.FormatStyle(date: .omitted, time: .omitted, locale: hu, calendar: .budapest, timeZone: .budapest)
+                .month(.abbreviated).day()
+            if year { style = style.year() }
+            return d.formatted(style)
+        }
     }
 
     static func weekday(_ day: String) -> String {
-        guard let d = Day.date(day) else { return "" }
-        return d.formatted(Date.FormatStyle(locale: hu, calendar: .budapest, timeZone: .budapest).weekday(.wide)).capitalized(with: hu)
+        guard day.utf8.count == 10 else { return "" }
+        return cached("w" + day) {
+            guard let d = Day.date(day) else { return "" }
+            return d.formatted(Date.FormatStyle(locale: hu, calendar: .budapest, timeZone: .budapest).weekday(.wide)).capitalized(with: hu)
+        }
     }
 
     static func longDate(_ date: Date) -> String {
@@ -110,7 +158,7 @@ enum Format {
     static func time(_ s: String) -> String {
         // Only unzoned timestamps are already Budapest wall-clock time. Zoned ones
         // ("…Z", "+01:00") must be converted, or every lesson shows an hour early.
-        if s.range(of: #"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$"#, options: .regularExpression) != nil {
+        if Day.isLocalTimestamp(s) {
             return String(s.dropFirst(11).prefix(5))
         }
         guard let d = Day.timestamp(s) else { return "—" }

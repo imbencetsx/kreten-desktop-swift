@@ -9,6 +9,7 @@ struct KretenApp: App {
         Window("KRETÉN", id: "main") {
             RootView()
                 .environment(model)
+                .environment(\.reducedEffects, model.reducedEffects)
                 .tint(model.prefs.palette.tint)
                 .preferredColorScheme(model.prefs.theme.colorScheme)
                 .fontDesign(.default)
@@ -22,6 +23,7 @@ struct KretenApp: App {
         MenuBarExtra {
             MenuBarPanel()
                 .environment(model)
+                .environment(\.reducedEffects, model.reducedEffects)
                 .tint(model.prefs.palette.tint)
                 .preferredColorScheme(model.prefs.theme.colorScheme)
         } label: {
@@ -32,6 +34,7 @@ struct KretenApp: App {
         Settings {
             SettingsView()
                 .environment(model)
+                .environment(\.reducedEffects, model.reducedEffects)
                 .tint(model.prefs.palette.tint)
                 .preferredColorScheme(model.prefs.theme.colorScheme)
         }

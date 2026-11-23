@@ -24,7 +24,7 @@ struct WelcomeView: View {
                     .controlSize(.large)
                     .keyboardShortcut(.defaultAction)
                 Button("Bemutató") { model.startDemo() }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.glassy)
                     .controlSize(.large)
             }
             .padding(.top, 8)
@@ -49,7 +49,7 @@ struct LoginSheet: View {
                 if loading { ProgressView().controlSize(.small) }
                 Spacer()
                 Button("Mégse") { model.cancelLogin() }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.glassy)
                     .keyboardShortcut(.cancelAction)
             }
             .padding(12)

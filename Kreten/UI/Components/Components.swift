@@ -23,15 +23,26 @@ enum Typeface {
 }
 
 extension Font {
+    @MainActor private static var monoCache: [String: Font] = [:]
+
     /// Geist Mono for secondary, data-like text: dates, times, counts, labels.
+    /// Cached: every row asks for these, and each new CTFont is a fresh font
+    /// object SwiftUI can't recognize as unchanged.
     @MainActor static func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         let w: Typeface.Weight = switch weight {
         case .medium: .medium
         case .semibold, .bold, .heavy, .black: .semibold
         default: .regular
         }
-        guard let d = Typeface.descriptors[w] else { return .system(size: size, weight: weight, design: .monospaced) }
-        return Font(CTFontCreateWithFontDescriptor(d, size, nil))
+        let key = "\(w.rawValue)/\(size)"
+        if let font = monoCache[key] { return font }
+        let font: Font = if let d = Typeface.descriptors[w] {
+            Font(CTFontCreateWithFontDescriptor(d, size, nil))
+        } else {
+            .system(size: size, weight: weight, design: .monospaced)
+        }
+        monoCache[key] = font
+        return font
     }
 }
 
@@ -45,6 +56,7 @@ struct PageScaffold<Actions: View, Content: View>: View {
     @ViewBuilder var actions: Actions
     @ViewBuilder var content: Content
     @Environment(AppModel.self) private var model
+    @Environment(\.reducedEffects) private var reduced
 
     var body: some View {
         ScrollView {
@@ -77,7 +89,8 @@ struct PageScaffold<Actions: View, Content: View>: View {
             .frame(maxWidth: 1240, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
+        // The soft edge blurs content scrolling under the toolbar on every frame.
+        .scrollEdgeEffectStyle(reduced ? .hard : .soft, for: .top)
     }
 }
 
@@ -89,18 +102,10 @@ extension PageScaffold where Actions == EmptyView {
 
 // MARK: Panels
 
-/// Shared Liquid Glass surface for cards and standalone panels. Keep glass
-/// behind the content so labels and controls retain their full contrast.
-struct PanelBackground: ViewModifier {
-    var radius: CGFloat = 16
-    func body(content: Content) -> some View {
-        content
-            .glassEffect(.regular, in: .rect(cornerRadius: radius))
-    }
-}
-
+/// Shared surface for cards and standalone panels (Liquid Glass, or flat with
+/// reduced effects). Keep it behind the content so labels keep full contrast.
 extension View {
-    func panel(radius: CGFloat = 16) -> some View { modifier(PanelBackground(radius: radius)) }
+    func panel(radius: CGFloat = 16) -> some View { surface(.rect(cornerRadius: radius)) }
 }
 
 struct Card<Content: View>: View {
@@ -200,10 +205,7 @@ struct GradeBadge: View {
             .font(grade.isNumeric || hidden ? .system(size: size * 0.5, weight: .semibold, design: .rounded) : .mono(size * 0.3, .medium))
             .foregroundStyle(color)
             .frame(width: size, height: size)
-            .glassEffect(
-                .regular.tint(color.opacity(hidden ? 0.08 : 0.25)),
-                in: .rect(cornerRadius: size * 0.3)
-            )
+            .surface(.rect(cornerRadius: size * 0.3), tint: color.opacity(hidden ? 0.08 : 0.2))
             .onTapGesture { if hidden { model.revealGrades() } }
             .accessibilityLabel(hidden ? "Rejtett jegy" : "Jegy: \(grade.display)")
     }
@@ -305,7 +307,7 @@ struct GlassSearchField: View {
         }
         .padding(.horizontal, 11).padding(.vertical, 6)
         .frame(maxWidth: 260)
-        .glassEffect(.regular, in: .capsule)
+        .surface(.capsule)
     }
 }
 

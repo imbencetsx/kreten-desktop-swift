@@ -46,6 +46,20 @@ enum WindowBackdrop: String, Codable, CaseIterable, Identifiable {
     var label: String { switch self { case .translucent: "Átlátszó"; case .glass: "Üveg"; case .gradient: "Színátmenet" } }
 }
 
+/// Visual effects level. `automatic` reduces them on low-end GPUs (`Hardware.isLowEnd`).
+enum EffectsMode: String, Codable, CaseIterable, Identifiable {
+    case automatic, full, reduced
+    var id: Self { self }
+    var label: String { switch self { case .automatic: "Automatikus"; case .full: "Teljes"; case .reduced: "Csökkentett" } }
+    var isReduced: Bool {
+        switch self {
+        case .automatic: Hardware.isLowEnd
+        case .full: false
+        case .reduced: true
+        }
+    }
+}
+
 enum TitleFont: String, Codable, CaseIterable, Identifiable {
     case system, rounded, serif
     var id: Self { self }
@@ -98,6 +112,7 @@ struct Preferences: Codable, Equatable {
     var titleFont = TitleFont.rounded
     var gradeThresholds: [Double] = [1.5, 2.5, 3.5, 4.5]
     var hiddenPages: Set<Page> = []
+    var effects = EffectsMode.automatic
 
     init() {}
 
@@ -111,6 +126,7 @@ struct Preferences: Codable, Equatable {
         v(.palette, &palette); v(.privateGrades, &privateGrades); v(.bellOffsetMinutes, &bellOffsetMinutes)
         v(.mutedSubjects, &mutedSubjects); v(.notificationCategories, &notificationCategories)
         v(.titleFont, &titleFont); v(.gradeThresholds, &gradeThresholds); v(.hiddenPages, &hiddenPages)
+        v(.effects, &effects)
     }
 
     static let defaultsKey = "preferences.v1"

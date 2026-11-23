@@ -105,5 +105,19 @@ check(!announced.matches(identifiedLesson), "different subject IDs override iden
 let parsedTest = AnnouncedTest.parse(j(#"[{"Uid":"test-1","Tantargy":{"Uid":"subject-1","Nev":"Történelem"},"Datum":"2026-11-16","Temaja":"Források"}]"#))[0]
 check(parsedTest.subjectID == "subject-1" && parsedTest.matches(identifiedLesson), "parses test subject ID for timetable association")
 
+// Precomputed parsing (fast paths replacing regexes and per-call formatters).
+check(Day.of("2026-11-16") == "2026-11-16" && Day.of("2026-11-16T08:15") == "2026-11-16" && Day.of("2026-11-16T08:15:00.123") == "2026-11-16", "local day forms")
+check(Day.of("2026-11-16T23:30:00.500Z") == "2026-11-17", "fractional UTC timestamp → Budapest day")
+check(Day.of("2026-11-16T08:15:00+01:00") == "2026-11-16" && Day.of("nonsense").isEmpty && Day.of("2026-1-16").isEmpty, "zoned/invalid day forms")
+check(!Day.isLocalTimestamp("2026-11-16T08:15:00Z") && !Day.isLocalTimestamp("2026-11-16 08:15") && Day.isLocalTimestamp("2026-11-16T08:15"), "local timestamp detection")
+check(Day.timestamp("2026-11-16T08:15") == Day.timestamp("2026-11-16T08:15:00") && Day.timestamp("2026-11-16T07:15:00Z") == Day.timestamp("2026-11-16T08:15:00"), "timestamp forms agree")
+check(testLesson.timeRange == "08:15–09:00" && testLesson.startDate != nil && testLesson.endDate != nil, "lesson times parsed once")
+check(testLesson.isActive(at: Day.timestamp("2026-11-16T08:30:00")!) && !testLesson.isActive(at: Day.timestamp("2026-11-16T09:00:00")!), "lesson active window")
+let live = LiveStatus.compute(LiveStatus.timeline([testLesson]), now: Day.timestamp("2026-11-16T08:00:00")!)
+check(live.kind == .upcoming && live.end == testLesson.startDate, "live status from prebuilt timeline")
+let halfYear = Grade.parse(j(#"[{"Uid":"h","Tantargy":{"Nev":"Mat"},"SzamErtek":4,"Tipus":{"Nev":"Félévi értékelés"}},{"Uid":"m","Tantargy":{"Nev":"Mat"},"SzamErtek":3,"Jelleg":"Ertekeles"}]"#))
+check(halfYear.filter(\.isNumeric).map(\.id) == ["m"], "semester marks don't count toward averages")
+check(Format.day("2026-11-16") == Format.day("2026-11-16") && Format.day("") == "Nincs megadva" && Format.weekday("2026-11-16") == "Hétfő", "cached day labels")
+
 print(failures == 0 ? "ALL PASSED" : "\(failures) FAILED")
 exit(failures == 0 ? 0 : 1)

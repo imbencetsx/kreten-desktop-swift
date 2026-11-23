@@ -26,29 +26,55 @@ enum WindowBlur {
 struct WindowConfigurator: View {
     @Environment(AppModel.self) private var model
     var body: some View {
-        WindowAccessor(backdrop: model.look.backdrop, blur: Int(model.look.blur.rounded()))
-            .frame(width: 0, height: 0)
+        WindowAccessor(backdrop: model.look.backdrop, blur: Int(model.look.blur.rounded()), reduced: model.reducedEffects) { visible in
+            if model.windowVisible != visible { model.windowVisible = visible }
+        }
+        .frame(width: 0, height: 0)
     }
 }
 
-/// Makes the hosting NSWindow non-opaque and applies the blur radius.
+/// Makes the hosting NSWindow non-opaque and applies the blur radius, and
+/// reports whether the window is actually visible on screen.
 /// The tint itself is drawn by SwiftUI as the window's container background.
 struct WindowAccessor: NSViewRepresentable {
     var backdrop: WindowBackdrop
     var blur: Int
+    /// Opaque window, no window-server blur: the desktop is not composited through it.
+    var reduced: Bool
+    var onVisibility: (Bool) -> Void
+
+    struct Applied: Equatable { var backdrop: WindowBackdrop, blur: Int, reduced: Bool }
 
     final class Probe: NSView {
         var onWindow: ((NSWindow) -> Void)?
-        var applied: (WindowBackdrop, Int)?
+        var onVisibility: ((Bool) -> Void)?
+        var applied: Applied?
+        nonisolated(unsafe) private var observers: [NSObjectProtocol] = []
+
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             applied = nil
-            if let window { onWindow?(window) }
+            observers.forEach(NotificationCenter.default.removeObserver)
+            observers = []
+            guard let window else { onVisibility?(false); return }
+            for name in [NSWindow.didChangeOcclusionStateNotification, NSWindow.willCloseNotification] {
+                observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] note in
+                    let closing = note.name == NSWindow.willCloseNotification
+                    MainActor.assumeIsolated { self?.onVisibility?(!closing && window.occlusionState.contains(.visible)) }
+                })
+            }
+            // Assume visible on attach; the window may not be ordered in yet, and
+            // the occlusion notification corrects this once it settles.
+            onVisibility?(true)
+            onWindow?(window)
         }
+
+        deinit { observers.forEach(NotificationCenter.default.removeObserver) }
     }
 
     func makeNSView(context: Context) -> Probe {
         let probe = Probe()
+        probe.onVisibility = onVisibility
         probe.onWindow = { [weak probe] window in
             // The window number is assigned after ordering in; retry next runloop turn.
             DispatchQueue.main.async { probe.map { configure(window, probe: $0) } }
@@ -57,20 +83,22 @@ struct WindowAccessor: NSViewRepresentable {
     }
 
     func updateNSView(_ probe: Probe, context: Context) {
+        probe.onVisibility = onVisibility
         probe.onWindow = { [weak probe] window in probe.map { configure(window, probe: $0) } }
         if let window = probe.window { configure(window, probe: probe) }
     }
 
     private func configure(_ window: NSWindow, probe: Probe) {
         // Only touch the window server when something actually changed.
-        if let applied = probe.applied, applied.0 == backdrop, applied.1 == blur { return }
-        let clear = backdrop != .gradient
+        let wanted = Applied(backdrop: backdrop, blur: blur, reduced: reduced)
+        if probe.applied == wanted { return }
+        let clear = backdrop != .gradient && !reduced
         if window.isOpaque == clear { window.isOpaque = !clear }
         let background: NSColor = clear ? .clear : .windowBackgroundColor
         if window.backgroundColor != background { window.backgroundColor = background }
         window.titlebarAppearsTransparent = true
-        WindowBlur.apply(window, radius: backdrop == .translucent ? blur : 0)
-        if window.windowNumber > 0 { probe.applied = (backdrop, blur) }
+        WindowBlur.apply(window, radius: backdrop == .translucent && !reduced ? blur : 0)
+        if window.windowNumber > 0 { probe.applied = wanted }
     }
 }
 
@@ -81,13 +109,18 @@ struct BackdropView: View {
 
     var body: some View {
         let look = model.look
+        let reduced = model.reducedEffects
         switch look.backdrop {
+        case .translucent where reduced, .glass where reduced:
+            // Same color, fully opaque: nothing behind the window is sampled or blurred.
+            tint
         case .translucent:
             tint.opacity(look.opacity)
         case .glass:
             Rectangle().fill(.regularMaterial)
         case .gradient:
-            GradientWallpaper(a: Color(hexString: look.gradientColor1), b: Color(hexString: look.gradientColor2), animated: look.animatedGradient)
+            GradientWallpaper(a: Color(hexString: look.gradientColor1), b: Color(hexString: look.gradientColor2),
+                              animated: look.animatedGradient && !reduced)
                 .overlay(scheme == .dark ? Color.black.opacity(0.45) : Color.white.opacity(0.25))
         }
     }

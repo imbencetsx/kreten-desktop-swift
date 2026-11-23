@@ -18,11 +18,18 @@ struct DiaryData {
     var calendar = SchoolCalendar(.null)
     var messages: [MessageFolder: [Message]] = [:]
     var student: JSON = .null
+    // Derived once per snapshot instead of on every render.
+    var timeline: LiveStatus.Timeline = []
+    var gradeAverage: Double?
+    var subjectCount = 0
 
     init() {}
     init(_ s: Snapshot) {
         grades = Grade.parse(s["grades"])
+        gradeAverage = grades.average
+        subjectCount = Set(grades.map(\.subject)).count
         lessons = Lesson.parse(s["timetable"])
+        timeline = LiveStatus.timeline(lessons)
         homework = Homework.parse(s["homework"])
         tests = AnnouncedTest.parse(s["tests"])
         absences = Absence.parse(s["absences"])
@@ -96,6 +103,11 @@ final class AppModel {
     func hideGrades() { withAnimation(.smooth) { gradesRevealed = false } }
 
     var accent: Color { prefs.palette.color }
+    /// Flat surfaces, opaque window, no decorative animation.
+    var reducedEffects: Bool { prefs.effects.isReduced }
+    /// False while the main window is closed, minimized or fully covered;
+    /// clocks pause so nothing re-renders off screen.
+    var windowVisible = true
     let look = WindowLook()
     var hasAccount: Bool { snapshot.activeAccountID != nil }
 

@@ -16,7 +16,7 @@ struct ProfilePage: View {
 
         PageScaffold(eyebrow: "A te fiókod", title: "Profilom", subtitle: "Iskolai adatok és elérhetőségek, a KRÉTA rendszeréből.") {
             Button { model.beginLogin() } label: { Label("Fiók hozzáadása", systemImage: "person.badge.plus") }
-                .buttonStyle(.glass).controlSize(.large)
+                .buttonStyle(.glassy).controlSize(.large)
         } content: {
             Card(padding: 20) {
                 HStack(spacing: 18) {
@@ -69,7 +69,7 @@ struct ProfilePage: View {
                     if bank["IsReadOnly"].bool == true {
                         Text("Az iskola nem engedi a módosítást.").font(.caption).foregroundStyle(.secondary)
                     } else if !bank["BankszamlaSzam"].text.isEmpty {
-                        Button("Bankszámlaadatok törlése", role: .destructive) { confirmDeleteBank = true }.buttonStyle(.glass)
+                        Button("Bankszámlaadatok törlése", role: .destructive) { confirmDeleteBank = true }.buttonStyle(.glassy)
                     }
                 }
                 Card {
@@ -83,7 +83,7 @@ struct ProfilePage: View {
                             }
                             Spacer()
                             if a.id == model.snapshot.activeAccountID { Pill(text: "Aktív", color: .green) }
-                            else { Button("Váltás") { model.select(a) }.buttonStyle(.glass).controlSize(.small) }
+                            else { Button("Váltás") { model.select(a) }.buttonStyle(.glassy).controlSize(.small) }
                         }
                     }
                 }
@@ -122,7 +122,7 @@ struct ContactEditor: View {
             .formStyle(.grouped)
             HStack {
                 Spacer()
-                Button("Mégse") { dismiss() }.buttonStyle(.glass)
+                Button("Mégse") { dismiss() }.buttonStyle(.glassy)
                 Button(busy ? "Mentés…" : "Mentés a KRÉTA-ba") {
                     busy = true
                     Task { if await model.updateContact(email: email, phone: phone) { dismiss() }; busy = false }
@@ -150,7 +150,7 @@ struct BankEditor: View {
             .formStyle(.grouped)
             HStack {
                 Spacer()
-                Button("Mégse") { dismiss() }.buttonStyle(.glass)
+                Button("Mégse") { dismiss() }.buttonStyle(.glassy)
                 Button(busy ? "Mentés…" : "Mentés a KRÉTA-ba") {
                     busy = true
                     Task { if await model.updateBank(form) { dismiss() }; busy = false }
@@ -171,7 +171,7 @@ struct NotificationsPage: View {
         PageScaffold(eyebrow: "Amiről érdemes tudnod", title: "Értesítések",
                      subtitle: "A háttérfrissítés által észlelt legutóbbi változások.") {
             if !items.isEmpty {
-                Button("Összes törlése", systemImage: "trash") { model.dismiss(nil) }.buttonStyle(.glass)
+                Button("Összes törlése", systemImage: "trash") { model.dismiss(nil) }.buttonStyle(.glassy)
             }
         } content: {
             if items.isEmpty {
@@ -204,10 +204,10 @@ struct NotificationRow: View {
                 }
                 Spacer()
                 if let page {
-                    Button("Megnyitás") { model.page = page }.buttonStyle(.glass).controlSize(.small)
+                    Button("Megnyitás") { model.page = page }.buttonStyle(.glassy).controlSize(.small)
                 }
                 Button { model.dismiss(notification) } label: { Image(systemName: "xmark") }
-                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.small)
+                    .buttonStyle(.glassy).buttonBorderShape(.circle).controlSize(.small)
                     .opacity(hover ? 1 : 0.4)
                     .help("Értesítés elvetése")
             }
